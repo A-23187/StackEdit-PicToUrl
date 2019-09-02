@@ -13,3 +13,6 @@ A StackEdit's plugin base on Tampermonkey, which allows user to upload picture t
 
 # Screenshot
 ![screenshot](./screenshot.gif)
+
+# License
+[MIT License](./LICENSE)
