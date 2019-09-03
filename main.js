@@ -113,8 +113,59 @@ function onDrop() {
     };
 }
 
+const doc = {
+    // return the name (dirname+basename) of the doc currently being edited
+    name: () => {
+        var root = document.getElementsByClassName('explorer__tree')[0].firstElementChild;
+        var elem = document.getElementsByClassName('explorer-node--selected')[0];
+
+        // when the item selected is a folder not a doc, need special treatment
+        if(elem.getAttribute('class').indexOf('folder') != -1) {
+            var explorer = document.getElementsByClassName('layout__panel layout__panel--explorer')[0];
+            if(explorer.getAttribute('aria-hidden') === 'true') {
+                document.getElementsByClassName('navigation-bar__button--explorer-toggler')[0].click();
+            }
+            notifier.info('Please select a file not a folder from explorer.')
+            return;
+        }
+
+        var name = '';
+        while(elem != root) {
+            name = elem.firstElementChild.innerText.trim() + '/' + name;
+            elem = elem.closest('.explorer-node__children').closest('.explorer-node--folder');
+        }
+        return name.replace(/\/$/, '');
+    },
+
+    // return the content of the doc currently being edited
+    content: () => {
+        return document.getElementsByTagName('pre')[0].innerText;
+    }
+}
+
+function onKeyDown() {
+    const ctrl = 17, alt = 18, s = 83;
+    var prev = -1;
+
+    return event => {
+        if(!document.getElementsByClassName('editor').length) return;
+
+        if(event.keyCode === s) {
+            if(prev === ctrl) {
+                console.log(doc.name(), doc.content());
+            } else if(prev === alt) {
+                // TODO turn on/off the timed sync task when user press Alt + S
+            }
+        }
+        prev = event.keyCode;
+    }
+}
+
 (function() {
     'use strict';
+
     window.addEventListener('paste', onPaste);
     window.addEventListener('drop', onDrop());
+
+    document.addEventListener('keydown', onKeyDown());
 })();
