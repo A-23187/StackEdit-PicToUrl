@@ -131,7 +131,17 @@ const doc = {
 
         var name = '';
         while(elem != root) {
-            name = elem.firstElementChild.innerText.trim() + '/' + name;
+            var temp = elem.firstElementChild.innerText.trim();
+            if(name != '' && temp[temp.length - 1] == '.') {
+                notifier.err('The folder\'s name can not end with "."');
+                return;
+            }
+            if(temp.match(/[/\\*<>?:|]/)) {
+                notifier.err('The name of file/folder can\'t contain illegal chars (/\\*<>?:|).');
+                return;
+            }
+
+            name = temp + '/' + name;
             elem = elem.closest('.explorer-node__children').closest('.explorer-node--folder');
         }
         return name.replace(/\/$/, '');
@@ -143,8 +153,23 @@ const doc = {
     }
 }
 
+function onClick(event) {
+    if(event.detail < 2) return;
+
+    var attr = event.target.getAttribute('class');
+    if(!attr || attr.indexOf('folder') != -1) return;
+
+    if(attr.indexOf('explorer-node__item') != -1) {
+        var node = event.target.closest('.explorer-node');
+        if(node.getAttribute('class').indexOf('folder') != -1) return;
+
+        // TODO get backup from onedrive and insert it into editor
+        console.log('The element clicked is ', event.target, '\nand it\'s name is ', doc.name());
+    }
+}
+
 function onKeyDown() {
-    const ctrl = 17, alt = 18, s = 83;
+    const ctrl = 17, alt = 18, n = 78, s = 83;
     var prev = -1;
 
     return event => {
@@ -152,11 +177,19 @@ function onKeyDown() {
 
         if(event.keyCode === s) {
             if(prev === ctrl) {
+                // TODO upload current doc to ondrive
                 console.log(doc.name(), doc.content());
             } else if(prev === alt) {
                 // TODO turn on/off the timed sync task when user press Alt + S
+                console.log('Alt + s');
             }
         }
+
+        if(event.keyCode === n && prev === alt) {
+            // TODO new a doc by press Alt + N
+            console.log('Alt + n');
+        }
+
         prev = event.keyCode;
     }
 }
@@ -167,5 +200,6 @@ function onKeyDown() {
     window.addEventListener('paste', onPaste);
     window.addEventListener('drop', onDrop());
 
+    document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKeyDown());
 })();
