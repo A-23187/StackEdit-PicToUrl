@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         StackEdit PicToUrl
 // @namespace    http://www.a23187.cn/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Convert pic to url when you paste a pic in clipboard to editor by Ctrl+V or drag some pics into editor
 // @author       A23187
+// @match        https://stackedit.io
 // @match        https://stackedit.io/app
 // @grant        none
 // ==/UserScript==
@@ -12,8 +13,8 @@ const notifier = {
     __notify: (type, msg) => {
         const d = [
             /* err  */ 'M 13 14 L 11 14 L 11 9.99998 L 13 9.99998 M 13 18 L 11 18 L 11 16 L 13 16 M 1 21 L 23 21 L 12 1.99998 L 1 21 Z',
-            /* info */'M 12.9994 8.99805 L 10.9994 8.99805 L 10.9994 6.99805 L 12.9994 6.99805 M 12.9994 16.998 L 10.9994 16.998 L 10.9994 10.998 L 12.9994 10.998 M 11.9994 1.99805 C 6.47642 1.99805 1.99943 6.47504 1.99943 11.998 C 1.99943 17.5211 6.47642 21.998 11.9994 21.998 C 17.5224 21.998 21.9994 17.5211 21.9994 11.998 C 21.9994 6.47504 17.5224 1.99805 11.9994 1.99805 Z',
-            /* ok   */'M 12,2C 17.5228,2 22,6.47716 22,12C 22,17.5228 17.5228,22 12,22C 6.47715,22 2,17.5228 2,12C 2,6.47716 6.47715,2 12,2 Z M 10.9999,16.5019L 17.9999,9.50193L 16.5859,8.08794L 10.9999,13.6739L 7.91391,10.5879L 6.49991,12.0019L 10.9999,16.5019 Z'
+            /* info */ 'M 12.9994 8.99805 L 10.9994 8.99805 L 10.9994 6.99805 L 12.9994 6.99805 M 12.9994 16.998 L 10.9994 16.998 L 10.9994 10.998 L 12.9994 10.998 M 11.9994 1.99805 C 6.47642 1.99805 1.99943 6.47504 1.99943 11.998 C 1.99943 17.5211 6.47642 21.998 11.9994 21.998 C 17.5224 21.998 21.9994 17.5211 21.9994 11.998 C 21.9994 6.47504 17.5224 1.99805 11.9994 1.99805 Z',
+            /* ok   */ 'M 12,2C 17.5228,2 22,6.47716 22,12C 22,17.5228 17.5228,22 12,22C 6.47715,22 2,17.5228 2,12C 2,6.47716 6.47715,2 12,2 Z M 10.9999,16.5019L 17.9999,9.50193L 16.5859,8.08794L 10.9999,13.6739L 7.91391,10.5879L 6.49991,12.0019L 10.9999,16.5019 Z'
         ];
 
         var parent = document.getElementsByClassName('notification')[0];
@@ -196,6 +197,10 @@ function onKeyDown() {
 
 (function() {
     'use strict';
+    if(document.location.pathname == '/') {
+        document.location = document.location.origin + '/app';
+        return;
+    }
 
     window.addEventListener('paste', onPaste);
     window.addEventListener('drop', onDrop());
