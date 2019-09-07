@@ -6,6 +6,7 @@
 // @author       A23187
 // @match        https://stackedit.io
 // @match        https://stackedit.io/app
+// @match        https://stackedit.io/app?*
 // @grant        none
 // ==/UserScript==
 
@@ -195,6 +196,70 @@ function onKeyDown() {
     }
 }
 
+const syncer = (() => {
+    const clientId = '983e2014-c7ab-43e5-8da3-bd8514194894';
+    const clientSecret = 'IK6T24T1fQKE%3ai-%5bIhvFL%3ac8mIjznq.n'; // client_secret url-encoded
+
+    const redirectUrl = 'https://stackedit.io/app'; // must match the urls configured in Azure Portal.
+    const corsProxy = 'https://cors-anywhere.herokuapp.com/'; // cors proxy (see more here: https://github.com/Rob--W/cors-anywhere)
+    const authUrl = corsProxy + 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+
+    var accessToken, refreshToken;
+
+    var lastSyncedDoc = ''; // the last doc synced.
+
+    const helper = {
+        login: () => {
+            var a = document.createElement('a');
+            a.setAttribute('href',
+                `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&\
+                scope=files.readwrite%20offline_access&response_type=code&redirect_uri=${redirectUrl}`
+            );
+            a.click();
+        },
+        auth: (code) => {
+            fetch(authUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUrl}&\
+                    grant_type=${code ? 'authorization_code' : 'refresh_token'}&` +
+                    (code ? `code=${code}` : `refresh_token=${refreshToken}`)
+            }).then(
+                response => response.json()
+            ).then(data => {
+                accessToken = data.access_token;
+                refreshToken = data.refresh_token;
+            });
+        },
+        logout: () => {
+            // TODO Sign the user out
+            // (see more here: docs.microsoft.com/zh-cn/onedrive/developer/rest-api/getting-started/graph-oauth?view=odsp-graph-online#sign-the-user-out)
+        }
+    }
+
+    return {
+        init: () => {
+            var url = new URL(window.location.href);
+            var code = url.searchParams.get('code');
+            code ? helper.auth(code) : helper.login();
+
+            // re-auth when token expires.
+            var timer = window.setInterval(() => {
+                refreshToken ? helper.auth() : window.clearInterval(timer)
+            }, 2880000); // 2880000ms = 80% * 3600s * 1000, token's life is 3600s.
+        },
+        put: (name, content) => {
+
+        },
+        get: (name) => {
+
+        },
+        token: () => {
+            return accessToken;
+        }
+    };
+})();
+
 (function() {
     'use strict';
     if(document.location.pathname == '/') {
@@ -205,6 +270,7 @@ function onKeyDown() {
     window.addEventListener('paste', onPaste);
     window.addEventListener('drop', onDrop());
 
+    syncer.init();
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKeyDown());
 })();
