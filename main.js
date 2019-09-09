@@ -38,7 +38,7 @@ const notifier = {
     err: msg => notifier.__notify(0, msg),
     info: msg => notifier.__notify(1, msg),
     ok: msg => notifier.__notify(2, msg)
-}
+};
 
 async function uploadPic(pic) {
     notifier.info('Upload Pic ...');
@@ -127,7 +127,7 @@ const doc = {
             if(explorer.getAttribute('aria-hidden') === 'true') {
                 document.getElementsByClassName('navigation-bar__button--explorer-toggler')[0].click();
             }
-            notifier.info('Please select a file not a folder from explorer.')
+            notifier.info('Please select a file not a folder from explorer.');
             return;
         }
 
@@ -153,7 +153,7 @@ const doc = {
     content: () => {
         return document.getElementsByTagName('pre')[0].innerText;
     }
-}
+};
 
 function onClick(event) {
     if(event.detail < 2) return;
@@ -165,8 +165,7 @@ function onClick(event) {
         var node = event.target.closest('.explorer-node');
         if(node.getAttribute('class').indexOf('folder') != -1) return;
 
-        // TODO get backup from onedrive and insert it into editor
-        console.log('The element clicked is ', event.target, '\nand it\'s name is ', doc.name());
+        syncer.get(doc.name());
     }
 }
 
@@ -179,11 +178,12 @@ function onKeyDown() {
 
         if(event.keyCode === s) {
             if(prev === ctrl) {
-                // TODO upload current doc to ondrive
-                console.log(doc.name(), doc.content());
+                var name = doc.name();
+                if(name) {
+                    syncer.put(doc.name(), doc.content());
+                }
             } else if(prev === alt) {
-                // TODO turn on/off the timed sync task when user press Alt + S
-                console.log('Alt + s');
+                syncer.put();
             }
         }
 
@@ -196,6 +196,16 @@ function onKeyDown() {
     }
 }
 
+const addCss = (() => {
+    const head = document.head || document.getElementsByTagName('head')[0];
+    const style = document.createElement('style');
+
+    style.type = 'text/css';
+    head.appendChild(style);
+
+    return css => style.appendChild(document.createTextNode(css));
+})();
+
 const syncer = (() => {
     const clientId = '983e2014-c7ab-43e5-8da3-bd8514194894';
     const clientSecret = 'IK6T24T1fQKE%3ai-%5bIhvFL%3ac8mIjznq.n'; // client_secret url-encoded
@@ -203,10 +213,10 @@ const syncer = (() => {
     const redirectUrl = 'https://stackedit.io/app'; // must match the urls configured in Azure Portal.
     const corsProxy = 'https://cors-anywhere.herokuapp.com/'; // cors proxy (see more here: https://github.com/Rob--W/cors-anywhere)
     const authUrl = corsProxy + 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+    const baseUrl = 'https://graph.microsoft.com/v1.0/me/drive/special/approot';
 
     var accessToken, refreshToken;
-
-    var lastSyncedDoc = ''; // the last doc synced.
+    var timer = 0;
 
     const helper = {
         login: () => {
@@ -234,10 +244,20 @@ const syncer = (() => {
         logout: () => {
             // TODO Sign the user out
             // (see more here: docs.microsoft.com/zh-cn/onedrive/developer/rest-api/getting-started/graph-oauth?view=odsp-graph-online#sign-the-user-out)
+        },
+        startAnm: () => {
+            var elem = document.getElementsByClassName('navigation-bar__button--sync')[0];
+            elem.removeAttribute('disabled');
+            elem.style.animationPlayState = 'running';
+        },
+        stopAnm: () => {
+            var elem = document.getElementsByClassName('navigation-bar__button--sync')[0];
+            elem.style.animationPlayState = 'paused';
+            elem.setAttribute('disabled', 'disabled');
         }
     }
 
-    return {
+    const ret = {
         init: () => {
             var url = new URL(window.location.href);
             var code = url.searchParams.get('code');
@@ -247,17 +267,87 @@ const syncer = (() => {
             var timer = window.setInterval(() => {
                 refreshToken ? helper.auth() : window.clearInterval(timer)
             }, 2880000); // 2880000ms = 80% * 3600s * 1000, token's life is 3600s.
+
+            addCss(`.navigation-bar__button--sync { animation: rotation 1s infinite paused linear; }
+                @keyframes rotation {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }`
+            );
+
+            ret.put();
         },
         put: (name, content) => {
+            if(!name) {
+                if(timer) {
+                    window.clearInterval(timer);
+                    timer = 0;
+                } else {
+                    timer = window.setInterval(() => {
+                        var name = doc.name();
+                        if(name) {
+                            ret.put(name, doc.content());
+                        }
+                    }, 300000); // 300000ms = 5min
+                }
+                return;
+            }
 
+            helper.startAnm();
+
+            fetch(baseUrl + ':/' + name + '.md:/content', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `bearer ${accessToken}`,
+                    'Content-Type': 'text/plain'
+                },
+                body: content
+            }).then(
+                response => response.json()
+            ).then(data => {
+                var err = data.error;
+                if(err) {
+                    notifier.err('Fail to sync, see more info in console.');
+                    console.error('Error:\n', JSON.stringify(err));
+                } else {
+                    // TODO save some info about the last synced doc in onedrive
+                }
+
+                helper.stopAnm();
+            });
         },
         get: (name) => {
+            helper.startAnm();
 
+            fetch(corsProxy + baseUrl + ':/' + name + '.md:/content', {
+                method: 'GET',
+                headers: { 'Authorization': `bearer ${accessToken}` }
+            }).then(
+                response => response.ok ? response.text() : response.json()
+            ).then(data => {
+                var err = data.error;
+                if(err) {
+                    notifier.err('Fail to backup, see more info in console.');
+                    console.error('Error:\n', JSON.stringify(err));
+                } else {
+                    // clear the editor and then insert data to editor
+                    var pre = document.getElementsByTagName('pre')[0];
+                    pre.innerHTML = '<div class="cledit-section"><span class="lf"><br><span class="hd-lf" style="display: none"></span></span></div>';
+                    pre.focus(); // !!!
+                    const selection = window.getSelection();
+                    const node = document.createTextNode(data);
+                    selection.getRangeAt(0).insertNode(node);
+                }
+
+                helper.stopAnm();
+            });
         },
         token: () => {
             return accessToken;
         }
     };
+
+    return ret;
 })();
 
 (function() {
