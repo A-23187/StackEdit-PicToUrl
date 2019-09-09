@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         StackEdit PicToUrl
+// @name         StackEdit Plugin
 // @namespace    http://www.a23187.cn/
-// @version      1.0.1
-// @description  Convert pic to url when you paste a pic in clipboard to editor by Ctrl+V or drag some pics into editor
+// @version      1.0.0
+// @description  PicToUrl + Sync with OneDrive
 // @author       A23187
 // @match        https://stackedit.io
 // @match        https://stackedit.io/app

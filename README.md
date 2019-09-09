@@ -1,5 +1,5 @@
-# StackEdit PicToUrl
-A StackEdit's plugin base on Tampermonkey, which allows user to upload picture to IHS (image hosting service), and then inserts the url of picture into editor automatically with the syntax "`![image](url)`".
+# StackEdit Plugin
+A StackEdit's plugin base on Tampermonkey.
 
 # What is StackEdit
 [StackEdit | In-browser Markdown editor](https://www.stakedit.io)
@@ -8,11 +8,13 @@ A StackEdit's plugin base on Tampermonkey, which allows user to upload picture t
 [Tampermonkey](https://www.tampermonkey.net/?locale=en)
 
 # Features
-- Two ways to upload pic, including pasting from clipboard, dragging pic into editor.
-- Only supports [sm.ms](https://sm.ms/) IHS currently, and will support more other IHS APIs in the future.
+- PicToUrl
+	- Two ways to upload pic, including pasting from clipboard, dragging pic into editor.
+	- Only supports [sm.ms](https://sm.ms/) IHS currently, and will support more other IHS APIs in the future.
 
-# Screenshot
-![screenshot](./screenshot.gif)
+- Synchronization (base on OneDrive)
+	- Sync documents manually (by press Ctrl + s) or automatically.
+	- Turn on/off automatic sync by press Alt + n.
 
 # License
 [MIT License](./LICENSE)
