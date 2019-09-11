@@ -14,7 +14,7 @@ A StackEdit's plugin base on Tampermonkey.
 
 - Synchronization (base on OneDrive)
 	- Sync documents manually (by press Ctrl + s) or automatically.
-	- Turn on/off automatic sync by press Alt + n.
+	- Turn on/off automatic sync by press Alt + s.
 
 # License
 [MIT License](./LICENSE)

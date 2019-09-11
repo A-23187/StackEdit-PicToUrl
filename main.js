@@ -282,6 +282,7 @@ const syncer = (() => {
                 if(timer) {
                     window.clearInterval(timer);
                     timer = 0;
+                    notifier.info('Automatic sync is turned off.');
                 } else {
                     timer = window.setInterval(() => {
                         var name = doc.name();
@@ -289,6 +290,7 @@ const syncer = (() => {
                             ret.put(name, doc.content());
                         }
                     }, 300000); // 300000ms = 5min
+                    notifier.info('Automatic sync is turned on.');
                 }
                 return;
             }
