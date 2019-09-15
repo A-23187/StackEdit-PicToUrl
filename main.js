@@ -79,7 +79,7 @@ function insertUrlToEditor(url) {
 }
 
 function isPic(info) {
-    return info.type.match(/^image\/.+$/i);
+    return info.type && info.type.match(/^image\/.+$/i);
 }
 
 function onPaste(event) {
